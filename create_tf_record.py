@@ -99,7 +99,7 @@ def read_image(filename, resize_height, resize_width,normalization=False):
     # rgb_image=Image.open(filename)
     if resize_height>0 and resize_width>0:
         rgb_image=cv2.resize(rgb_image,(resize_width,resize_height))
-    rgb_image=np.asanyarray(rgb_image)
+    rgb_image=np.asanyarray(rgb_image) #转换为数组返回
     if normalization:
         # 不能写成:rgb_image=rgb_image/255
         rgb_image=rgb_image/255.0
@@ -209,7 +209,7 @@ def create_records(image_dir,file, output_record_dir, resize_height, resize_widt
     # 加载文件,仅获取一个label
     images_list, labels_list=load_labels_file(file,1,shuffle)
 
-    writer = tf.python_io.TFRecordWriter(output_record_dir)
+    writer = tf.python_io.TFRecordWriter(output_record_dir) #实例化tfrecordwriter()
     for i, [image_name, labels] in enumerate(zip(images_list, labels_list)):
         image_path=os.path.join(image_dir,images_list[i])
         if not os.path.exists(image_path):
@@ -271,7 +271,7 @@ def batch_test(record_file,resize_height, resize_width):
     tf_image,tf_label = read_records(record_file,resize_height,resize_width,type='normalization')
     image_batch, label_batch= get_batch_images(tf_image,tf_label,batch_size=4,labels_nums=5,one_hot=False,shuffle=False)
 
-    init = tf.global_variables_initializer()
+    init = tf.global_variables_initializer()#全局变量初始化
     with tf.Session() as sess:  # 开始一个会话
         sess.run(init)
         coord = tf.train.Coordinator()

@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np 
 import pdb
 import os
+
 from datetime import datetime
 import slim.nets.inception_v1 as inception_v1
 from create_tf_record import *
@@ -14,14 +15,14 @@ labels_nums = 5  # 类别个数
 batch_size = 16  #
 resize_height = 224  # 指定存储图片高度
 resize_width = 224  # 指定存储图片宽度
-depths = 3
-data_shape = [batch_size, resize_height, resize_width, depths]
+depths = 3 #三通道图片
+data_shape = [batch_size, resize_height, resize_width, depths]#图片格式(batch_size,高，宽，通道数)
 
 # 定义input_images为图片数据
-input_images = tf.placeholder(dtype=tf.float32, shape=[None, resize_height, resize_width, depths], name='input')
+input_images = tf.placeholder(dtype=tf.float32, shape=[None, resize_height, resize_width, depths], name='input') #训练图片往这里扔，设为None是为了满足batch_size
 # 定义input_labels为labels数据
 # input_labels = tf.placeholder(dtype=tf.int32, shape=[None], name='label')
-input_labels = tf.placeholder(dtype=tf.int32, shape=[None, labels_nums], name='label')
+input_labels = tf.placeholder(dtype=tf.int32, shape=[None, labels_nums], name='label') #输出一张图片在五类上的概率,None也是为了满足batch_size
 
 # 定义dropout的概率
 keep_prob = tf.placeholder(tf.float32,name='keep_prob')
@@ -31,7 +32,7 @@ def net_evaluation(sess,loss,accuracy,val_images_batch,val_labels_batch,val_nums
     val_max_steps = int(val_nums / batch_size)
     val_losses = []
     val_accs = []
-    for _ in xrange(val_max_steps):
+    for _ in range(val_max_steps):
         val_x, val_y = sess.run([val_images_batch, val_labels_batch])
         # print('labels:',val_y)
         # val_loss = sess.run(loss, feed_dict={x: val_x, y: val_y, keep_prob: 1.0})
@@ -67,9 +68,9 @@ def step_train(train_op,loss,accuracy,
     saver = tf.train.Saver()
     max_acc = 0.0
     with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        sess.run(tf.local_variables_initializer())
-        coord = tf.train.Coordinator()
+        sess.run(tf.global_variables_initializer()) #全局变量初始化
+        sess.run(tf.local_variables_initializer()) #局部变量初始化
+        coord = tf.train.Coordinator() #线程管理器
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
         for i in range(max_steps + 1):
             batch_input_images, batch_input_labels = sess.run([train_images_batch, train_labels_batch])
@@ -85,7 +86,7 @@ def step_train(train_op,loss,accuracy,
                 datetime.now(), i, train_loss, train_acc))
 
             # val测试(测试全部val数据)
-            if i % val_log_step == 0:
+            if i % val_log_step == 0: #每迭代200次使用测试数据测试一次。
                 mean_loss, mean_acc = net_evaluation(sess, loss, accuracy, val_images_batch, val_labels_batch, val_nums)
                 print("%s: Step [%d]  val Loss : %f, val accuracy :  %g" % (datetime.now(), i, mean_loss, mean_acc))
 
@@ -129,7 +130,7 @@ def train(train_record_file,
     [base_lr,max_steps]=train_param
     [batch_size,resize_height,resize_width,depths]=data_shape
 
-    # 获得训练和测试的样本数
+    # 获得训练和测试的样本数量
     train_nums=get_example_nums(train_record_file)
     val_nums=get_example_nums(val_record_file)
     print('train nums:%d,val nums:%d'%(train_nums,val_nums))
@@ -163,7 +164,7 @@ def train(train_record_file,
     # global_step = tf.Variable(0, trainable=False)
     # learning_rate = tf.train.exponential_decay(0.05, global_step, 150, 0.9)
     #
-    optimizer = tf.train.MomentumOptimizer(learning_rate=base_lr,momentum= 0.9)
+    optimizer = tf.train.MomentumOptimizer(learning_rate=base_lr,momentum= 0.9) #定义优化器，进行梯度下降时采用的策略。
     # # train_tensor = optimizer.minimize(loss, global_step)
     # train_op = slim.learning.create_train_op(loss, optimizer,global_step=global_step)
 
@@ -191,13 +192,13 @@ if __name__ == '__main__':
     train_record_file='dataset/record/train224.tfrecords'
     val_record_file='dataset/record/val224.tfrecords'
 
-    train_log_step=100
+    train_log_step=100 #每训练100次写入训练日志
     base_lr = 0.01  # 学习率
     max_steps = 10000  # 迭代次数
     train_param=[base_lr,max_steps]
 
-    val_log_step=200
-    snapshot=2000#保存文件间隔
+    val_log_step=200 #每间隔200次用测试数据测试一次。
+    snapshot=2000#每2000次做一个快照
     snapshot_prefix='models/model.ckpt'
     train(train_record_file=train_record_file,
           train_log_step=train_log_step,
